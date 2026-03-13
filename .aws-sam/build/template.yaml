@@ -1,0 +1,401 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: "CivicBridge AI \u2014 Serverless MVP Matchmaker Engine + Chat Engine\
+  \ + User Management\n"
+Globals:
+  Function:
+    Runtime: python3.12
+    MemorySize: 512
+    Timeout: 30
+    Tracing: Active
+    Environment:
+      Variables:
+        SCHEMES_TABLE:
+          Ref: SchemesTable
+        USERS_TABLE:
+          Ref: UsersTable
+        CONVERSATIONS_TABLE:
+          Ref: ConversationsTable
+        SCHEMES_BUCKET:
+          Ref: SchemesBucket
+        CHAT_BUCKET:
+          Ref: ChatUploadsBucket
+        SNS_TOPIC_ARN:
+          Ref: NotificationTopic
+        JWT_SECRET:
+          Fn::Sub: '{{resolve:ssm:/civicbridge/jwt-secret}}'
+        BEDROCK_REGION: us-east-1
+Parameters:
+  Environment:
+    Type: String
+    Default: dev
+    AllowedValues:
+    - dev
+    - prod
+  AdminApiKey:
+    Type: String
+    NoEcho: true
+    Default: civicbridge-admin-secret-change-me
+Resources:
+  SchemesBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName:
+        Fn::Sub: civicbridge-schemes-${AWS::AccountId}-${Environment}
+      BucketEncryption:
+        ServerSideEncryptionConfiguration:
+        - ServerSideEncryptionByDefault:
+            SSEAlgorithm: AES256
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: true
+        BlockPublicPolicy: true
+        IgnorePublicAcls: true
+        RestrictPublicBuckets: true
+  ChatUploadsBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName:
+        Fn::Sub: civicbridge-chat-uploads-${AWS::AccountId}-${Environment}
+      BucketEncryption:
+        ServerSideEncryptionConfiguration:
+        - ServerSideEncryptionByDefault:
+            SSEAlgorithm: AES256
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: true
+        BlockPublicPolicy: true
+        IgnorePublicAcls: true
+        RestrictPublicBuckets: true
+      LifecycleConfiguration:
+        Rules:
+        - Id: DeleteChatUploadsAfter24h
+          Status: Enabled
+          ExpirationInDays: 1
+  SchemesTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName:
+        Fn::Sub: CivicBridge-Schemes-${Environment}
+      BillingMode: PAY_PER_REQUEST
+      SSESpecification:
+        SSEEnabled: true
+      AttributeDefinitions:
+      - AttributeName: scheme_id
+        AttributeType: S
+      KeySchema:
+      - AttributeName: scheme_id
+        KeyType: HASH
+  UsersTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName:
+        Fn::Sub: CivicBridge-Users-${Environment}
+      BillingMode: PAY_PER_REQUEST
+      SSESpecification:
+        SSEEnabled: true
+      AttributeDefinitions:
+      - AttributeName: user_id
+        AttributeType: S
+      KeySchema:
+      - AttributeName: user_id
+        KeyType: HASH
+  ConversationsTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName:
+        Fn::Sub: CivicBridge-Conversations-${Environment}
+      BillingMode: PAY_PER_REQUEST
+      SSESpecification:
+        SSEEnabled: true
+      AttributeDefinitions:
+      - AttributeName: session_id
+        AttributeType: S
+      KeySchema:
+      - AttributeName: session_id
+        KeyType: HASH
+  NotificationTopic:
+    Type: AWS::SNS::Topic
+    Properties:
+      TopicName:
+        Fn::Sub: civicbridge-scheme-alerts-${Environment}
+      DisplayName: CivicBridge Scheme Alerts
+  AadhaarHandlerFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName:
+        Fn::Sub: civicbridge-aadhaar-handler-${Environment}
+      CodeUri: AadhaarHandlerFunction
+      Handler: handler.lambda_handler
+      Description: "Mock Aadhaar lookup \u2014 returns demographic profile for 12-digit\
+        \ Aadhaar number"
+      Policies:
+      - Statement:
+        - Effect: Allow
+          Action:
+          - logs:CreateLogGroup
+          - logs:CreateLogStream
+          - logs:PutLogEvents
+          Resource: '*'
+      Events:
+        AadhaarLookup:
+          Type: Api
+          Properties:
+            RestApiId:
+              Ref: CivicBridgeApi
+            Path: /aadhaar/lookup
+            Method: post
+    Metadata:
+      SamResourceId: AadhaarHandlerFunction
+  JwtAuthorizerFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName:
+        Fn::Sub: civicbridge-jwt-authorizer-${Environment}
+      CodeUri: JwtAuthorizerFunction
+      Handler: handler.lambda_handler
+      Description: JWT token authorizer for user endpoints
+      Policies:
+      - SSMParameterReadPolicy:
+          ParameterName: civicbridge/jwt-secret
+    Metadata:
+      SamResourceId: JwtAuthorizerFunction
+  CivicBridgeApi:
+    Type: AWS::Serverless::Api
+    Properties:
+      StageName: Prod
+      Cors:
+        AllowMethods: '''GET,POST,PUT,OPTIONS'''
+        AllowHeaders: '''Content-Type,Authorization,X-Api-Key'''
+        AllowOrigin: '''*'''
+      Auth:
+        Authorizers:
+          JwtAuthorizer:
+            FunctionArn:
+              Fn::GetAtt:
+              - JwtAuthorizerFunction
+              - Arn
+            Identity:
+              Header: Authorization
+              ReauthorizeEvery: 300
+  ProcessSchemeFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName:
+        Fn::Sub: civicbridge-process-scheme-${Environment}
+      CodeUri: ProcessSchemeFunction
+      Handler: handler.lambda_handler
+      Timeout: 300
+      MemorySize: 1024
+      Description: 'S3-triggered: extract eligibility rules, match users, send SNS'
+      Policies:
+      - S3ReadPolicy:
+          BucketName:
+            Ref: SchemesBucket
+      - DynamoDBCrudPolicy:
+          TableName:
+            Ref: SchemesTable
+      - DynamoDBReadPolicy:
+          TableName:
+            Ref: UsersTable
+      - SNSPublishMessagePolicy:
+          TopicName:
+            Fn::GetAtt:
+            - NotificationTopic
+            - TopicName
+      - Statement:
+        - Effect: Allow
+          Action:
+          - bedrock:InvokeModel
+          Resource: '*'
+      Events:
+        AdminUpload:
+          Type: Api
+          Properties:
+            RestApiId:
+              Ref: CivicBridgeApi
+            Path: /schemes
+            Method: post
+    Metadata:
+      SamResourceId: ProcessSchemeFunction
+  UserHandlerFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName:
+        Fn::Sub: civicbridge-user-handler-${Environment}
+      CodeUri: UserHandlerFunction
+      Handler: handler.lambda_handler
+      Description: User registration (Aadhaar-first), JWT issuance, profile management,
+        SMS opt-in
+      Environment:
+        Variables:
+          AADHAAR_FUNCTION_ARN:
+            Fn::GetAtt:
+            - AadhaarHandlerFunction
+            - Arn
+      Policies:
+      - DynamoDBCrudPolicy:
+          TableName:
+            Ref: UsersTable
+      - SSMParameterReadPolicy:
+          ParameterName: civicbridge/jwt-secret
+      - Statement:
+        - Effect: Allow
+          Action: lambda:InvokeFunction
+          Resource:
+            Fn::GetAtt:
+            - AadhaarHandlerFunction
+            - Arn
+      Events:
+        CreateUser:
+          Type: Api
+          Properties:
+            RestApiId:
+              Ref: CivicBridgeApi
+            Path: /users
+            Method: post
+        GetUser:
+          Type: Api
+          Properties:
+            RestApiId:
+              Ref: CivicBridgeApi
+            Path: /users/{user_id}
+            Method: get
+        UpdateUser:
+          Type: Api
+          Properties:
+            RestApiId:
+              Ref: CivicBridgeApi
+            Path: /users/{user_id}
+            Method: put
+        SubscribeUser:
+          Type: Api
+          Properties:
+            RestApiId:
+              Ref: CivicBridgeApi
+            Path: /users/{user_id}/subscribe
+            Method: post
+    Metadata:
+      SamResourceId: UserHandlerFunction
+  ChatHandlerFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName:
+        Fn::Sub: civicbridge-chat-handler-${Environment}
+      CodeUri: ChatHandlerFunction
+      Handler: handler.lambda_handler
+      Description: Chat messages, PDF upload, conversation history, eligibility checklist,
+        SMS confirmations
+      Policies:
+      - S3CrudPolicy:
+          BucketName:
+            Ref: ChatUploadsBucket
+      - DynamoDBCrudPolicy:
+          TableName:
+            Ref: ConversationsTable
+      - DynamoDBReadPolicy:
+          TableName:
+            Ref: SchemesTable
+      - DynamoDBReadPolicy:
+          TableName:
+            Ref: UsersTable
+      - Statement:
+        - Effect: Allow
+          Action:
+          - bedrock:InvokeModel
+          Resource: '*'
+      Events:
+        SendMessage:
+          Type: Api
+          Properties:
+            RestApiId:
+              Ref: CivicBridgeApi
+            Path: /chat
+            Method: post
+        UploadPDF:
+          Type: Api
+          Properties:
+            RestApiId:
+              Ref: CivicBridgeApi
+            Path: /chat/upload
+            Method: post
+        GetHistory:
+          Type: Api
+          Properties:
+            RestApiId:
+              Ref: CivicBridgeApi
+            Path: /chat/history/{session_id}
+            Method: get
+        ProfileSchemes:
+          Type: Api
+          Properties:
+            RestApiId:
+              Ref: CivicBridgeApi
+            Path: /chat/profile-schemes
+            Method: post
+    Metadata:
+      SamResourceId: ChatHandlerFunction
+  HealthCheckFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName:
+        Fn::Sub: civicbridge-health-${Environment}
+      CodeUri: HealthCheckFunction
+      Handler: handler.lambda_handler
+      Description: System health check across all components
+      Policies:
+      - DynamoDBReadPolicy:
+          TableName:
+            Ref: SchemesTable
+      - S3ReadPolicy:
+          BucketName:
+            Ref: SchemesBucket
+      Events:
+        HealthCheck:
+          Type: Api
+          Properties:
+            RestApiId:
+              Ref: CivicBridgeApi
+            Path: /health
+            Method: get
+    Metadata:
+      SamResourceId: HealthCheckFunction
+  ProcessSchemeLogs:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName:
+        Fn::Sub: /aws/lambda/civicbridge-process-scheme-${Environment}
+      RetentionInDays: 30
+  UserHandlerLogs:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName:
+        Fn::Sub: /aws/lambda/civicbridge-user-handler-${Environment}
+      RetentionInDays: 30
+  ChatHandlerLogs:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName:
+        Fn::Sub: /aws/lambda/civicbridge-chat-handler-${Environment}
+      RetentionInDays: 30
+Outputs:
+  ApiBaseUrl:
+    Description: API Gateway base URL
+    Value:
+      Fn::Sub: https://${CivicBridgeApi}.execute-api.${AWS::Region}.amazonaws.com/Prod
+    Export:
+      Name: CivicBridgeApiUrl
+  SchemesBucketName:
+    Description: S3 bucket for scheme PDFs
+    Value:
+      Ref: SchemesBucket
+  ChatUploadsBucketName:
+    Description: S3 bucket for chat uploads (24hr lifecycle)
+    Value:
+      Ref: ChatUploadsBucket
+  SchemesTableName:
+    Description: DynamoDB Schemes table
+    Value:
+      Ref: SchemesTable
+  UsersTableName:
+    Description: DynamoDB Users table
+    Value:
+      Ref: UsersTable
