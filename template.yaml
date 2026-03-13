@@ -175,6 +175,7 @@ Resources:
         AllowHeaders: "'Content-Type,Authorization,X-Api-Key'"
         AllowOrigin: "'*'"
       Auth:
+        DefaultAuthorizer: JwtAuthorizer
         Authorizers:
           JwtAuthorizer:
             FunctionArn: !GetAtt JwtAuthorizerFunction.Arn
@@ -290,6 +291,8 @@ Resources:
             RestApiId: !Ref CivicBridgeApi
             Path: /chat
             Method: post
+            Auth:
+              Authorizer: NONE
         UploadPDF:
           Type: Api
           Properties:

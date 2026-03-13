@@ -6,10 +6,10 @@
 
 - 🤖 **AI Chat Interface** — Ask about any scheme in Hindi/English/Hinglish  
 - 📋 **Eligibility Checklist** — Color-coded ✅/❌/❓ for each criterion  
-- ⚡ **Demo Mode** — Works offline with 3 built-in sample schemes (PM-KISAN, Vidya Lakshmi, PMAY)  
+ 
 - 💬 **Multi-turn Conversation** — Maintains context across follow-up questions  
 - 📱 **Mobile Responsive** — Works on screens from 320px wide  
-- 🎨 **Glassmorphism UI** — Modern, premium design with animations  
+
 
 ## 🚀 Quick Start (Demo Mode — No AWS Needed)
 
@@ -55,11 +55,7 @@ CivicBridgeAI/
 └── README.md
 ```
 
-## 📋 Demo Schemes Included
 
-1. **PM-KISAN** — Farmer income support (₹6,000/year)
-2. **Vidya Lakshmi** — Education loan scheme  
-3. **PMAY-U** — Housing subsidy for urban citizens
 
 ---
 Made with ❤️ for Indian citizens | AWS Hackathon MVP
