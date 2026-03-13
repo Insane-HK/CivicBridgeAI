@@ -7,6 +7,7 @@ import {
 } from 'lucide-react';
 import { DEMO_SCHEMES, getMockResponse } from './demoData';
 import AdvisorSection from './AdvisorSection';
+import DisclaimerBanner from './DisclaimerBanner';
 
 // Aadhaar numbers pre-loaded for demo mode fallback
 const MOCK_AADHAAR_DATA = {
@@ -883,6 +884,9 @@ export default function App() {
             {/* ── Main layout ── */}
             <main style={{ flex: 1, maxWidth: '850px', margin: '0 auto', padding: '1.5rem 1rem 2rem', width: '100%' }}>
 
+                {/* Disclaimer Banner */}
+                <DisclaimerBanner />
+
                 {/* Tabs */}
                 <div
                     className="glass-card"
@@ -922,8 +926,14 @@ export default function App() {
                                 </div>
                                 Aadhaar Details Se Schemes Dhundhe
                             </h2>
+                            <div style={{ background: '#fff7ed', border: '1px solid #fed7aa', borderRadius: '10px', padding: '12px', marginBottom: '1rem', display: 'flex', gap: '8px', alignItems: 'start' }}>
+                                <Info size={16} style={{ color: '#ea580c', flexShrink: 0, marginTop: '2px' }} />
+                                <div style={{ fontSize: '0.8rem', color: '#9a3412' }}>
+                                    <strong>Demo Mode:</strong> Aadhaar data is mock/simulated for testing. Real Aadhaar integration requires government approval. Try: 111122223333, 444455556666, 777788889999
+                                </div>
+                            </div>
                             <p style={{ fontSize: '0.9rem', color: '#64748b', marginBottom: '1.25rem' }}>
-                                Apna Aadhaar number dalen. Hum automatically aapki details nikal kar aapke liye best government schemes dhundenge. (Try 111122223333 or 444455556666)
+                                Apna Aadhaar number dalen. Hum automatically aapki details nikal kar aapke liye best government schemes dhundenge.
                             </p>
 
                             <form onSubmit={handleAadhaarSearch} style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
