@@ -1,7 +1,11 @@
-import React from 'react';
-import { AlertCircle, Info, Shield } from 'lucide-react';
+import React, { useState } from 'react';
+import { AlertCircle, Info, Shield, X } from 'lucide-react';
 
 export default function DisclaimerBanner() {
+    const [isVisible, setIsVisible] = useState(true);
+
+    if (!isVisible) return null;
+
     return (
         <div style={{
             background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
@@ -9,9 +13,42 @@ export default function DisclaimerBanner() {
             padding: '1.5rem',
             borderRadius: '16px',
             marginBottom: '1.5rem',
-            boxShadow: '0 4px 12px rgba(102, 126, 234, 0.3)'
+            boxShadow: '0 4px 12px rgba(102, 126, 234, 0.3)',
+            position: 'relative',
+            animation: 'fadeIn 0.3s ease-in'
         }}>
-            <div style={{ display: 'flex', alignItems: 'start', gap: '12px', marginBottom: '12px' }}>
+            {/* Close Button */}
+            <button
+                onClick={() => setIsVisible(false)}
+                style={{
+                    position: 'absolute',
+                    top: '12px',
+                    right: '12px',
+                    background: 'rgba(255, 255, 255, 0.2)',
+                    border: 'none',
+                    borderRadius: '8px',
+                    padding: '6px',
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    transition: 'all 0.2s ease',
+                    color: 'white'
+                }}
+                onMouseEnter={(e) => {
+                    e.currentTarget.style.background = 'rgba(255, 255, 255, 0.3)';
+                    e.currentTarget.style.transform = 'scale(1.1)';
+                }}
+                onMouseLeave={(e) => {
+                    e.currentTarget.style.background = 'rgba(255, 255, 255, 0.2)';
+                    e.currentTarget.style.transform = 'scale(1)';
+                }}
+                title="Dismiss"
+            >
+                <X size={18} />
+            </button>
+
+            <div style={{ display: 'flex', alignItems: 'start', gap: '12px', marginBottom: '12px', paddingRight: '30px' }}>
                 <Shield size={24} style={{ flexShrink: 0, marginTop: '2px' }} />
                 <div>
                     <h3 style={{ margin: '0 0 8px', fontSize: '1.1rem', fontWeight: 700 }}>
@@ -23,29 +60,61 @@ export default function DisclaimerBanner() {
                 </div>
             </div>
 
-            <div style={{ display: 'grid', gap: '10px', marginLeft: '36px' }}>
-                <div style={{ display: 'flex', gap: '8px', alignItems: 'start' }}>
+            <div style={{ display: 'grid', gap: '12px', marginLeft: '36px' }}>
+                <div style={{ 
+                    display: 'flex', 
+                    gap: '10px', 
+                    alignItems: 'start',
+                    background: 'rgba(255, 255, 255, 0.1)',
+                    padding: '10px 12px',
+                    borderRadius: '8px',
+                    borderLeft: '3px solid rgba(255, 255, 255, 0.4)'
+                }}>
                     <Info size={16} style={{ flexShrink: 0, marginTop: '3px' }} />
                     <div style={{ fontSize: '0.85rem', lineHeight: 1.5 }}>
                         <strong>Mock Aadhaar Data:</strong> All Aadhaar lookups return simulated data for testing. Real Aadhaar integration requires government approval and UIDAI compliance.
                     </div>
                 </div>
 
-                <div style={{ display: 'flex', gap: '8px', alignItems: 'start' }}>
+                <div style={{ 
+                    display: 'flex', 
+                    gap: '10px', 
+                    alignItems: 'start',
+                    background: 'rgba(255, 255, 255, 0.1)',
+                    padding: '10px 12px',
+                    borderRadius: '8px',
+                    borderLeft: '3px solid rgba(255, 255, 255, 0.4)'
+                }}>
                     <Info size={16} style={{ flexShrink: 0, marginTop: '3px' }} />
                     <div style={{ fontSize: '0.85rem', lineHeight: 1.5 }}>
                         <strong>SMS Disabled:</strong> Registration works but we're NOT sending any SMS notifications to prevent spam. Your data is stored securely in AWS DynamoDB.
                     </div>
                 </div>
 
-                <div style={{ display: 'flex', gap: '8px', alignItems: 'start' }}>
+                <div style={{ 
+                    display: 'flex', 
+                    gap: '10px', 
+                    alignItems: 'start',
+                    background: 'rgba(255, 255, 255, 0.1)',
+                    padding: '10px 12px',
+                    borderRadius: '8px',
+                    borderLeft: '3px solid rgba(255, 255, 255, 0.4)'
+                }}>
                     <Info size={16} style={{ flexShrink: 0, marginTop: '3px' }} />
                     <div style={{ fontSize: '0.85rem', lineHeight: 1.5 }}>
                         <strong>AI Responses:</strong> Powered by Amazon Bedrock Nova. Rate limited to 10 requests/minute per user to prevent abuse. Responses are AI-generated and should be verified with official sources.
                     </div>
                 </div>
 
-                <div style={{ display: 'flex', gap: '8px', alignItems: 'start' }}>
+                <div style={{ 
+                    display: 'flex', 
+                    gap: '10px', 
+                    alignItems: 'start',
+                    background: 'rgba(255, 255, 255, 0.1)',
+                    padding: '10px 12px',
+                    borderRadius: '8px',
+                    borderLeft: '3px solid rgba(255, 255, 255, 0.4)'
+                }}>
                     <AlertCircle size={16} style={{ flexShrink: 0, marginTop: '3px' }} />
                     <div style={{ fontSize: '0.85rem', lineHeight: 1.5 }}>
                         <strong>Guardrails Active:</strong> Rate limiting, input validation, and spam prevention measures are in place. Malicious requests will be blocked.
