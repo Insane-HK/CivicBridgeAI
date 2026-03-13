@@ -1,0 +1,57 @@
+# CivicBridge AI - Git Ignore
+
+# AWS SAM
+.aws-sam/
+samconfig.toml
+
+# Environment variables
+.env
+.env.local
+.env.production
+frontend/.env
+frontend/.env.local
+frontend/.env.production
+
+# Node modules
+node_modules/
+frontend/node_modules/
+
+# Build outputs
+frontend/dist/
+frontend/build/
+*.zip
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+venv/
+env/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Keys and secrets
+*.pem
+*.key
+*.cert
+
+# Temporary files
+*.tmp
+.cache/
