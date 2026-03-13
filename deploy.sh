@@ -49,20 +49,13 @@ fi
 
 # Check Bedrock model access
 echo -e "\n${YELLOW}3. Checking Bedrock model access...${NC}"
-echo -e "${YELLOW}⚠️  Please ensure you have enabled these models in AWS Bedrock (us-east-1):${NC}"
-echo "   - us.amazon.nova-lite-v1:0"
-echo "   - us.amazon.nova-pro-v1:0"
+echo -e "${CYAN}ℹ️  AWS Bedrock models are now auto-enabled on first use!${NC}"
+echo "   Models will be activated automatically when your Lambda functions invoke them."
 echo ""
-read -p "Have you enabled these models in Bedrock? (y/N): " -n 1 -r
-echo
-if [[ ! $REPLY =~ ^[Yy]$ ]]; then
-    echo -e "${RED}❌ Please enable Bedrock models first:${NC}"
-    echo "   1. Go to: https://console.aws.amazon.com/bedrock/home?region=us-east-1#/modelaccess"
-    echo "   2. Click 'Manage model access'"
-    echo "   3. Enable 'Amazon Nova Lite' and 'Amazon Nova Pro'"
-    echo "   4. Wait for approval (usually instant)"
-    exit 1
-fi
+echo "   Note: For Anthropic models, first-time users may need to submit use case details."
+echo "   Amazon Nova models (used in this project) are instantly available."
+echo ""
+echo -e "${GREEN}✅ No manual model activation needed - proceeding with deployment!${NC}"
 
 # Build SAM application
 echo -e "\n${YELLOW}4. Building SAM application...${NC}"

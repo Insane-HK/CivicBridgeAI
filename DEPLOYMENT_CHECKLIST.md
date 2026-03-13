@@ -37,16 +37,15 @@
 
 ### Prerequisites (Do These First!)
 
-#### 1. Enable Bedrock Models (CRITICAL!)
-```
-1. Go to: https://console.aws.amazon.com/bedrock/home?region=us-east-1#/modelaccess
-2. Click "Manage model access"
-3. Enable:
-   ✅ Amazon Nova Lite (us.amazon.nova-lite-v1:0)
-   ✅ Amazon Nova Pro (us.amazon.nova-pro-v1:0)
-4. Click "Save changes"
-5. Wait for approval (usually instant)
-```
+#### 1. Bedrock Models (Auto-Enabled! ✅)
+**Good news!** AWS Bedrock models are now automatically enabled when first invoked.
+
+- ✅ **Amazon Nova Lite** - Auto-enabled on first Lambda invocation
+- ✅ **Amazon Nova Pro** - Auto-enabled on first Lambda invocation
+
+**No manual activation needed!** Just deploy and the models will activate automatically.
+
+**Note:** For Anthropic models, first-time users may need to submit use case details. Amazon Nova models (used in this project) are instantly available.
 
 #### 2. Verify AWS Credentials
 ```powershell
@@ -84,7 +83,7 @@ chmod +x deploy.sh
 The script will:
 1. ✅ Check AWS credentials
 2. ✅ Create JWT secret in SSM
-3. ✅ Verify Bedrock access
+3. ✅ Confirm Bedrock auto-enablement
 4. ✅ Build SAM application
 5. ✅ Deploy to AWS
 6. ✅ Update frontend `.env`
@@ -167,9 +166,10 @@ Open: http://localhost:5173
 - Or request to exit sandbox (takes 1-2 days)
 
 ### Bedrock Models
-- **MUST** be enabled in `us-east-1` region
-- Deployment will fail without model access
-- Check: https://console.aws.amazon.com/bedrock/home?region=us-east-1#/modelaccess
+- **Auto-enabled** on first invocation (no manual setup needed!)
+- Amazon Nova models are instantly available
+- Models activate automatically when Lambda functions call them
+- For Anthropic models, first-time users may need to submit use case details
 
 ### JWT Secret
 - Automatically created by deployment script
@@ -189,7 +189,7 @@ Open: http://localhost:5173
 
 | Issue | Solution |
 |-------|----------|
-| "Bedrock model not found" | Enable models in Bedrock console (us-east-1) |
+| "Bedrock model not found" | Models auto-enable on first use - try invoking again |
 | "JWT secret not found" | Run deployment script or create manually |
 | "AWS credentials not found" | Run `aws configure` |
 | Frontend shows errors | Check `frontend/.env` has correct API URL |

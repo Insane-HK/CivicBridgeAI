@@ -23,7 +23,7 @@ Open http://localhost:5173 - Works with mock data!
 #### Prerequisites Checklist
 - [ ] AWS account with credentials configured
 - [ ] AWS SAM CLI installed
-- [ ] Bedrock models enabled (us-east-1)
+- [ ] ✅ Bedrock models (auto-enabled on first use!)
 
 #### One-Command Deploy (Windows)
 ```powershell

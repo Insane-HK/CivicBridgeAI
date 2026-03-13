@@ -20,27 +20,21 @@ Complete guide to deploy CivicBridge AI to AWS.
 
 ## 🔧 Pre-Deployment Setup
 
-### 1. Enable Bedrock Models (CRITICAL)
+### 1. Bedrock Models (Auto-Enabled!)
 
-**This must be done BEFORE deployment!**
+**Good news!** AWS Bedrock models are now **automatically enabled** when first invoked.
 
-1. Go to AWS Bedrock Console (us-east-1 region):
-   ```
-   https://console.aws.amazon.com/bedrock/home?region=us-east-1#/modelaccess
-   ```
+- ✅ **Amazon Nova Lite** (`us.amazon.nova-lite-v1:0`) - Auto-enabled on first use
+- ✅ **Amazon Nova Pro** (`us.amazon.nova-pro-v1:0`) - Auto-enabled on first use
 
-2. Click **"Manage model access"**
+**No manual activation needed!** Models will be activated automatically when your Lambda functions invoke them for the first time.
 
-3. Enable these models:
-   - ✅ **Amazon Nova Lite** (`us.amazon.nova-lite-v1:0`)
-   - ✅ **Amazon Nova Pro** (`us.amazon.nova-pro-v1:0`)
+**Note:** For Anthropic models (Claude), first-time users may need to submit use case details. Amazon Nova models (used in this project) are instantly available without any approval process.
 
-4. Click **"Save changes"** and wait for approval (usually instant)
-
-5. Verify access:
-   ```bash
-   aws bedrock list-foundation-models --region us-east-1 --query 'modelSummaries[?contains(modelId, `nova`)]'
-   ```
+If you want to verify available models (optional):
+```bash
+aws bedrock list-foundation-models --region us-east-1 --query 'modelSummaries[?contains(modelId, `nova`)]'
+```
 
 ### 2. Configure AWS Credentials
 
@@ -263,7 +257,10 @@ aws ssm delete-parameter --name "/civicbridge/jwt-secret" --region ap-south-1
 ## ❓ Troubleshooting
 
 ### Issue: "Bedrock model not found"
-**Solution:** Enable models in Bedrock console (us-east-1 region)
+**Solution:** Models auto-enable on first invocation. If you see this error:
+1. The model will be activated automatically on the first call
+2. Retry the operation - it should work on the second attempt
+3. For Anthropic models, you may need to submit use case details first
 
 ### Issue: "JWT secret not found"
 **Solution:** Run deployment script or manually create SSM parameter
